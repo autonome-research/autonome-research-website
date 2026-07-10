@@ -1,77 +1,31 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Autonome Research — independent inquiry into intelligent systems, tools, and possible futures." />
-    <title>Autonome Research</title>
-    <link rel="icon" href="/mark.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/src/style.css" />
-  </head>
-  <body>
-    <header class="site-header">
-      <a class="wordmark" href="#home" aria-label="Autonome Research home">autonome <span>research</span></a>
-      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav">menu</button>
-      <nav id="site-nav" aria-label="Main navigation">
-        <a href="#blog">Blog</a>
-        <a href="#research">Research</a>
-        <a href="#oss">OSS projects</a>
-        <a href="#about">About</a>
-      </nav>
-    </header>
-
-    <main>
-      <section class="hero" id="home" aria-labelledby="hero-title">
-        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
-        <img class="hero-mark" src="/mark.svg" alt="Autonome Research monogram" />
-        <h1 id="hero-title">Autonome<br />Research</h1>
-        <p>Research in the interest of<br />improving self-governance.</p>
-        <a class="scroll-cue" href="#research"><span>Explore our work</span><i>↓</i></a>
-      </section>
-
-      <section class="section" id="research">
-        <div class="section-label">01 / Research</div>
-        <div class="section-content">
-          <h2>Questions before<br />conclusions.</h2>
-          <p class="lead">We investigate how autonomous systems think, coordinate, and shape the worlds around them.</p>
-          <div class="cards">
-            <article><span>Field 01</span><h3>Agentic systems</h3><p>Architectures and interaction models for capable, legible autonomous agents.</p><a href="#about">Forthcoming ↗</a></article>
-            <article><span>Field 02</span><h3>Open intelligence</h3><p>Public infrastructure and methods for intelligence that remains accountable.</p><a href="#about">Forthcoming ↗</a></article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section section-dark" id="blog">
-        <div class="section-label">02 / Notes</div>
-        <div class="section-content">
-          <h2>Working in public.</h2>
-          <div class="post-list">
-            <article><time>Coming soon</time><h3>Notes from Autonome Research</h3><p>Experiments, field reports, and evolving ideas from our work.</p><span>→</span></article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="oss">
-        <div class="section-label">03 / Open source</div>
-        <div class="section-content split">
-          <h2>Tools should<br />travel freely.</h2>
-          <div><p class="lead">Our software, experiments, and research artifacts are built in the open whenever possible.</p><a class="text-link" href="#about">Projects arriving soon <span>↗</span></a></div>
-        </div>
-      </section>
-
-      <section class="section about" id="about">
-        <div class="section-label">04 / About</div>
-        <div class="section-content">
-          <p class="statement">Autonome Research is an independent, unincorporated research organization exploring intelligence and autonomy through research, software, and open collaboration.</p>
-          <a class="contact" href="mailto:hello@autonome.research">hello@autonome.research <span>↗</span></a>
-        </div>
-      </section>
-    </main>
-
-    <footer><img src="/mark.svg" alt="" /><p>Autonome Research</p><p>Independent · Open · 2026</p></footer>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Autonome Research — research in the interest of improving self-governance." />
+  <title>Autonome Research</title>
+  <link rel="icon" href="/mark.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body class="home-page">
+  <header class="site-header">
+    <a class="wordmark" href="/">autonome <span>research</span></a>
+    <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav">menu</button>
+    <nav id="site-nav" aria-label="Main navigation">
+      <a href="/blog/">Blog</a><a href="/research/">Research</a><a href="/projects/">OSS projects</a><a href="/about/">About</a>
+    </nav>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+      <img class="hero-mark" src="/mark.svg" alt="Autonome Research monogram" />
+      <h1 id="hero-title">Autonome<br />Research</h1>
+      <p>Research in the interest of<br />improving self-governance.</p>
+    </section>
+  </main>
+  <script type="module" src="/src/main.js"></script>
+</body>
 </html>

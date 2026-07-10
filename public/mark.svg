@@ -1,12 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 360" fill="none">
+  <!-- Structural axes inherit the surrounding text color. -->
   <g stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
-    <!-- The two structural strokes meet at one precise junction. -->
     <path d="M39 320 L272 20" />
     <path d="M157 168 L283 340" />
+  </g>
 
-    <!-- A circular vector around the long axis, seen in perspective. -->
+  <!-- Circular vector around the long axis, seen in perspective. -->
+  <g stroke="#F2D675" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"
+     transform="translate(6 -8)">
     <path d="M95 205 A105 48 38 1 1 130 233.5" />
     <path d="M130 233.5 L155 240.5" />
     <path d="M130 233.5 L146.5 254.5" />
   </g>
+
 </svg>

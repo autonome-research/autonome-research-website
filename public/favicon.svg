@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 360">
-  <rect width="320" height="360" rx="44" fill="#D8FF45"/>
+  <rect width="320" height="360" rx="44" fill="#FFFFFF"/>
   <defs>
     <marker id="arrow" viewBox="0 0 28 28" markerWidth="28" markerHeight="28" refX="14" refY="14" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M0 1 28 14 0 27Z" fill="#B84F4F"/>

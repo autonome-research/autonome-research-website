@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 360" fill="none">
   <style>
-    .axis-stroke { stroke: #171714; }
-    .axis-fill { fill: #171714; }
+    .axis-stroke { stroke: #F2F0E9; }
+    .axis-fill { fill: #F2F0E9; }
   </style>
   <defs>
     <marker id="vector-arrow" viewBox="0 0 28 28" markerWidth="28" markerHeight="28"

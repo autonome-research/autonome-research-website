@@ -21,7 +21,7 @@ if (savedTheme) document.documentElement.dataset.theme = savedTheme;
 const themeToggle = document.createElement('button');
 themeToggle.className = 'theme-toggle';
 themeToggle.type = 'button';
-nav.append(themeToggle);
+document.querySelector('.site-header').append(themeToggle);
 
 function updateThemeButton() {
   const current = document.documentElement.dataset.theme || systemTheme();

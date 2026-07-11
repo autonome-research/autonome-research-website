@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 360">
+  <rect width="320" height="360" rx="44" fill="#D8FF45"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 28 28" markerWidth="28" markerHeight="28" refX="14" refY="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 1 28 14 0 27Z" fill="#B84F4F"/>
+    </marker>
+  </defs>
+  <path d="M39 320 272 20" fill="none" stroke="#171714" stroke-width="12"/>
+  <path d="M153 171 161 165 285 334 281 346Z" fill="#171714"/>
+  <path d="M91 207A111 51 38 1 1 130 233.5" transform="translate(12 -8)" fill="none" stroke="#B84F4F" stroke-width="12" marker-end="url(#arrow)"/>
+</svg>

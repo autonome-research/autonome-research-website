@@ -9,6 +9,7 @@ const font = 'https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&
 const escape = (value = '') => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const isoDate = date => date instanceof Date ? date.toISOString().slice(0, 10) : String(date);
 const formatDate = date => new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${isoDate(date)}T00:00:00Z`));
+const compactDate = date => isoDate(date).split('-').map(Number).join('-');
 
 function shell({ title, description, active, main }) {
   const item = (href, label, key, external = false) => `<a${active === key ? ' class="active"' : ''} href="${href}"${external ? ' target="_blank" rel="noreferrer"' : ''}>${label}</a>`;
@@ -33,7 +34,7 @@ for (const post of posts) {
   const target = path.join(root, 'blog', post.slug);
   await fs.mkdir(target, { recursive: true });
   const body = marked.parse(post.body);
-  const main = `<main class="page-main post"><article><header class="post-header"><a href="/blog/">← Blog</a><time datetime="${isoDate(post.date)}">${formatDate(post.date)}</time><h1>${escape(post.articleTitle || post.title)}</h1></header><div class="post-body">${body}</div></article></main>`;
+  const main = `<main class="page-main post"><article><header class="post-header"><a href="/blog/">← Blog</a><h1>${escape(post.title)}</h1><time datetime="${isoDate(post.date)}">${compactDate(post.date)}</time><p class="post-subtitle">${escape(post.articleTitle || '')}</p></header><div class="post-body">${body}</div></article></main>`;
   await fs.writeFile(path.join(target, 'index.html'), shell({ title: post.articleTitle || post.title, description: post.summary || post.title, active: 'blog', main }));
 }
 

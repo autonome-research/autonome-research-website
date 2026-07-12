@@ -20,8 +20,8 @@ The focus of our teams is systems that can expand self-governance of data, resea
 
 As the frontier continues to change, and the capability overhang shifts, Autonome will continue prioritizing sovereign work and thought. Our goal is to apply consistent scientific rigor to issues of autonomy in the age of rapid technological advancement. Success in competitive arenas of scientific research, engineering, and economic prediction serves as the prerequisite for any substantial impact on root-node problems of self-determination.
 
-## On the logo
+## About the logo
 
 The Autonome Research logo is a diagram of the Dzhanibekov effect, famously demonstrated aboard the Salyut 7 space station in 1985. A T-shaped object spun about its intermediate axis flips its orientation, with no external torque applied and no energy gained or lost. The reversal emerges entirely from the object's own geometry.
 
-*Transformation from momentum and internal structure alone.*
+Transformation from momentum and internal structure.

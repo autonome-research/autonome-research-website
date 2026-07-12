@@ -27,7 +27,7 @@ function updateThemeButton() {
   const current = document.documentElement.dataset.theme || systemTheme();
   const next = current === 'dark' ? 'light' : 'dark';
   document.querySelectorAll('img[src="/mark.svg"], img[src="/mark-dark.svg"]').forEach((mark) => {
-    mark.src = current === 'dark' ? '/mark-dark.svg' : '/mark.svg';
+    mark.src = current === 'dark' || mark.closest('.about-page') ? '/mark-dark.svg' : '/mark.svg';
   });
   themeToggle.textContent = next === 'dark' ? '●' : '○';
   themeToggle.setAttribute('aria-label', `Use ${next} mode`);

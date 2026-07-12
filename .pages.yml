@@ -1,0 +1,44 @@
+media:
+  input: public/uploads
+  output: /uploads
+
+content:
+  - name: blog
+    label: Blog posts
+    type: collection
+    path: content/blog
+    filename: "{fields.slug}.md"
+    view:
+      fields: [title, date, published]
+      primary: title
+      sort: [date, title]
+      default:
+        sort: date
+        order: desc
+    fields:
+      - { name: title, label: Listing title, type: string, required: true }
+      - { name: articleTitle, label: Article title, type: string, required: true }
+      - { name: slug, label: URL slug, type: string, required: true, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+      - { name: date, label: Publication date, type: date, required: true }
+      - { name: summary, label: Description, type: text, required: true }
+      - { name: published, label: Published, type: boolean, default: false }
+      - { name: body, label: Article, type: rich-text }
+
+  - name: research
+    label: Research fields
+    type: collection
+    path: content/research
+    filename: "{fields.slug}.md"
+    view:
+      fields: [title, field, published]
+      primary: title
+      sort: [order, title]
+    fields:
+      - { name: title, label: Title, type: string, required: true }
+      - { name: slug, label: URL slug, type: string, required: true, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+      - { name: field, label: Field label, type: string, required: true }
+      - { name: order, label: Display order, type: number, required: true }
+      - { name: summary, label: Summary, type: text, required: true }
+      - { name: status, label: Status, type: string, default: Research forthcoming }
+      - { name: published, label: Published, type: boolean, default: false }
+      - { name: body, label: Research content, type: rich-text }

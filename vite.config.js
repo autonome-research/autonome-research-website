@@ -1,21 +1,27 @@
-import { readdirSync, existsSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
+import matter from 'gray-matter';
 
+const root = __dirname;
 const input = {
-  home: resolve(__dirname, 'index.html'),
-  blog: resolve(__dirname, 'blog/index.html'),
-  research: resolve(__dirname, 'research/index.html'),
-  projects: resolve(__dirname, 'projects/index.html'),
-  about: resolve(__dirname, 'about/index.html'),
+  home: resolve(root, 'index.html'),
+  blog: resolve(root, 'blog/index.html'),
+  research: resolve(root, 'research/index.html'),
+  projects: resolve(root, 'projects/index.html'),
+  about: resolve(root, 'about/index.html'),
 };
 
-const blogDirectory = resolve(__dirname, 'blog');
-if (existsSync(blogDirectory)) {
-  for (const entry of readdirSync(blogDirectory, { withFileTypes: true })) {
-    if (entry.isDirectory() && existsSync(resolve(blogDirectory, entry.name, 'index.html'))) {
-      input[`blog-${entry.name}`] = resolve(blogDirectory, entry.name, 'index.html');
-    }
+// Build inputs come from published Markdown, never from whatever generated folders
+// happen to be present in the checkout.
+for (const type of ['blog', 'research']) {
+  const contentDirectory = resolve(root, 'content', type);
+  for (const file of readdirSync(contentDirectory).filter(name => name.endsWith('.md')).sort()) {
+    const { data } = matter(readFileSync(resolve(contentDirectory, file), 'utf8'));
+    if (!data.published) continue;
+    const page = resolve(root, type, String(data.slug), 'index.html');
+    if (!existsSync(page)) throw new Error(`Missing generated page for ${contentDirectory}/${file}: ${page}`);
+    input[`${type}-${data.slug}`] = page;
   }
 }
 

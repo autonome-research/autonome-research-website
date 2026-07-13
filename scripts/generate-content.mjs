@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
 import { marked } from 'marked';
+import sanitizeHtml from 'sanitize-html';
 
 const root = process.cwd();
 const font = 'https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Manrope:wght@300;400;500;600&family=Libre+Baskerville:wght@400;700&display=swap';
@@ -11,6 +12,33 @@ const escape = (value = '') => String(value).replace(/[&<>"']/g, c => ({'&':'&am
 const isoDate = date => date instanceof Date ? date.toISOString().slice(0, 10) : String(date);
 const formatDate = date => new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${isoDate(date)}T00:00:00Z`));
 const compactDate = date => isoDate(date).split('-').map(Number).join('-');
+
+// Markdown is CMS-authored and therefore untrusted. Keep semantic article markup,
+// while removing executable elements, inline handlers/styles, and unsafe protocols.
+const renderMarkdown = (markdown, source) => {
+  const rendered = marked.parse(markdown, { async: false });
+  const clean = sanitizeHtml(rendered, {
+    allowedTags: [
+      'p', 'br', 'hr', 'blockquote', 'pre', 'code', 'strong', 'em', 'del',
+      'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img',
+      'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub'
+    ],
+    allowedAttributes: {
+      a: ['href', 'title'],
+      img: ['src', 'alt', 'title', 'width', 'height'],
+      th: ['colspan', 'rowspan', 'scope'],
+      td: ['colspan', 'rowspan']
+    },
+    allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+    allowedSchemesByTag: { img: ['http', 'https'] },
+    allowProtocolRelative: false,
+    disallowedTagsMode: 'discard'
+  });
+  if (/<(?:script|iframe|object|embed|svg|math)\b|\son[a-z]+\s*=|(?:href|src)\s*=\s*["']?\s*(?:javascript|vbscript|data):/i.test(clean)) {
+    throw new Error(`${source}: Markdown sanitizer produced unsafe HTML`);
+  }
+  return clean;
+};
 
 const manifestPath = path.join(root, '.generated-content.json');
 const generatedMarker = '<!-- generated from content/**/*.md; do not edit -->';
@@ -119,7 +147,7 @@ await fs.writeFile(path.join(root, 'blog/index.html'), shell({ title: 'Blog', de
 for (const post of posts) {
   const target = path.join(root, 'blog', post.slug);
   await fs.mkdir(target, { recursive: true });
-  const body = marked.parse(post.body);
+  const body = renderMarkdown(post.body, post.source);
   const main = `<main class="page-main post"><article><header class="post-header"><a href="/blog/">← Blog</a><h1>${escape(post.title)}</h1><time datetime="${isoDate(post.date)}">${compactDate(post.date)}</time><p class="post-subtitle">${escape(post.articleTitle || '')}</p></header><div class="post-body">${body}</div></article></main>`;
   await fs.writeFile(path.join(target, 'index.html'), shell({ title: post.articleTitle || post.title, description: post.summary || post.title, active: 'blog', main }));
   generatedOutputs.push(`blog/${post.slug}/index.html`);
@@ -135,7 +163,7 @@ await fs.writeFile(path.join(root, 'research/index.html'), shell({ title: 'Resea
 for (const item of research) {
   const target = path.join(root, 'research', item.slug);
   await fs.mkdir(target, { recursive: true });
-  const main = `<main class="page-main post research-detail"><article><header class="post-header"><a href="/research/">← Research</a><dl class="research-meta"><div><dt>Field</dt><dd>${escape(item.field)}</dd></div><div><dt>Status</dt><dd>${escape(item.status || 'Research forthcoming')}</dd></div></dl><h1>${escape(item.title)}</h1><p class="post-subtitle">${escape(item.summary)}</p></header><div class="post-body">${marked.parse(item.body)}</div></article></main>`;
+  const main = `<main class="page-main post research-detail"><article><header class="post-header"><a href="/research/">← Research</a><dl class="research-meta"><div><dt>Field</dt><dd>${escape(item.field)}</dd></div><div><dt>Status</dt><dd>${escape(item.status || 'Research forthcoming')}</dd></div></dl><h1>${escape(item.title)}</h1><p class="post-subtitle">${escape(item.summary)}</p></header><div class="post-body">${renderMarkdown(item.body, item.source)}</div></article></main>`;
   await fs.writeFile(path.join(target, 'index.html'), shell({ title: item.title, description: item.summary, active: 'research', main }));
   generatedOutputs.push(`research/${item.slug}/index.html`);
 }

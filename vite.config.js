@@ -8,8 +8,8 @@ const input = {
   home: resolve(root, 'index.html'),
   blog: resolve(root, 'blog/index.html'),
   research: resolve(root, 'research/index.html'),
-  projects: resolve(root, 'projects/index.html'),
   about: resolve(root, 'about/index.html'),
+  notFound: resolve(root, '404.html'),
 };
 
 // Build inputs come from published Markdown, never from whatever generated folders

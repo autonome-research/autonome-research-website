@@ -7,6 +7,8 @@
     "generate": "node scripts/generate-content.mjs",
     "dev": "npm run generate && vite",
     "build": "npm run generate && vite build && node scripts/validate-site.mjs",
+    "test": "node --test",
+    "check": "npm test && npm run build",
     "preview": "vite preview"
   },
   "devDependencies": {

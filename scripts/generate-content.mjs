@@ -2,10 +2,10 @@ import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
-import { marked } from 'marked';
-import sanitizeHtml from 'sanitize-html';
+import { renderMarkdown } from './content-utils.mjs';
 
 const root = process.cwd();
+const siteOrigin = 'https://autonomeresearch.com';
 const font = 'https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Manrope:wght@300;400;500;600&family=Libre+Baskerville:wght@400;700&display=swap';
 
 const escape = (value = '') => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -13,39 +13,19 @@ const isoDate = date => date instanceof Date ? date.toISOString().slice(0, 10) :
 const formatDate = date => new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${isoDate(date)}T00:00:00Z`));
 const compactDate = date => isoDate(date).split('-').map(Number).join('-');
 
-// Markdown is CMS-authored and therefore untrusted. Keep semantic article markup,
-// while removing executable elements, inline handlers/styles, and unsafe protocols.
-const renderMarkdown = (markdown, source) => {
-  const rendered = marked.parse(markdown, { async: false });
-  const clean = sanitizeHtml(rendered, {
-    allowedTags: [
-      'p', 'br', 'hr', 'blockquote', 'pre', 'code', 'strong', 'em', 'del',
-      'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img',
-      'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub'
-    ],
-    allowedAttributes: {
-      a: ['href', 'title'],
-      img: ['src', 'alt', 'title', 'width', 'height'],
-      th: ['colspan', 'rowspan', 'scope'],
-      td: ['colspan', 'rowspan']
-    },
-    allowedSchemes: ['http', 'https', 'mailto', 'tel'],
-    allowedSchemesByTag: { img: ['http', 'https'] },
-    allowProtocolRelative: false,
-    disallowedTagsMode: 'discard'
-  });
-  if (/<(?:script|iframe|object|embed|svg|math)\b|\son[a-z]+\s*=|(?:href|src)\s*=\s*["']?\s*(?:javascript|vbscript|data):/i.test(clean)) {
-    throw new Error(`${source}: Markdown sanitizer produced unsafe HTML`);
-  }
-  return clean;
-};
-
 const manifestPath = path.join(root, '.generated-content.json');
 const generatedMarker = '<!-- generated from content/**/*.md; do not edit -->';
 
-function shell({ title, description, active, main }) {
+function shell({ title, description, active, main, pathname, article = null }) {
   const item = (href, label, key, external = false) => `<a${active === key ? ' class="active"' : ''} href="${href}"${external ? ' target="_blank" rel="noreferrer"' : ''}>${label}</a>`;
-  return `${generatedMarker}\n<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escape(description)}"><title>${escape(title)} — Autonome Research</title><link rel="icon" href="/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="${font}" rel="stylesheet"><link rel="stylesheet" href="/src/style.css"></head><body><header class="site-header"><a class="wordmark" href="/">autonome <span>research</span></a><button class="menu-button" aria-expanded="false" aria-controls="site-nav">menu</button><nav id="site-nav">${item('/blog/','Blog','blog')}${item('/research/','Research','research')}${item('https://github.com/autonome-research','OSS','oss',true)}${item('/about/','About','about')}</nav></header>${main}<footer><img src="/mark.svg" alt=""><p>Autonome Research</p><p>Independent · Open · 2026</p></footer><script type="module" src="/src/main.js"></script></body></html>`;
+  const pageTitle = `${title} — Autonome Research`;
+  const canonical = `${siteOrigin}${pathname}`;
+  const structuredData = article ? {
+    '@context': 'https://schema.org', '@type': 'BlogPosting', headline: article.title,
+    datePublished: isoDate(article.date), description, url: canonical,
+    publisher: { '@type': 'Organization', name: 'Autonome Research', url: siteOrigin }
+  } : { '@context': 'https://schema.org', '@type': 'Organization', name: 'Autonome Research', url: siteOrigin, email: 'hello@autonomeresearch.com' };
+  return `${generatedMarker}\n<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script>try{const t=localStorage.getItem('autonome-theme');const s=t==='light'||t==='dark'?t:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=s;document.documentElement.dataset.themeSource=t?'saved':'system'}catch{document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.themeSource='system'}</script><meta name="description" content="${escape(description)}"><title>${escape(pageTitle)}</title><link rel="canonical" href="${canonical}"><meta property="og:type" content="${article ? 'article' : 'website'}"><meta property="og:title" content="${escape(pageTitle)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><meta property="og:image" content="${siteOrigin}/original-mark.png"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="${escape(pageTitle)}"><meta name="twitter:description" content="${escape(description)}"><script type="application/ld+json">${JSON.stringify(structuredData).replace(/</g, '\\u003c')}</script><link rel="icon" href="/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="${font}" rel="stylesheet"><link rel="stylesheet" href="/src/style.css"></head><body><header class="site-header"><a class="wordmark" href="/">autonome <span>research</span></a><button class="menu-button" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="site-nav">menu</button><nav id="site-nav" aria-label="Main navigation">${item('/blog/','Blog','blog')}${item('/research/','Research','research')}${item('https://github.com/autonome-research','OSS','oss',true)}${item('/about/','About','about')}</nav></header>${main}<footer><img src="/mark.svg" alt=""><p>Autonome Research</p><p>Independent · Open · 2026</p></footer><script type="module" src="/src/main.js"></script></body></html>`;
 }
 
 async function collection(directory) {
@@ -68,12 +48,24 @@ const requiredStrings = {
   research: ['title', 'slug', 'field', 'summary'],
 };
 
-function validateContent(collections, generatedPaths) {
+async function filesUnder(directory, prefix = '') {
+  const entries = await fs.readdir(directory, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const relative = path.posix.join(prefix, entry.name);
+    if (entry.isDirectory()) files.push(...await filesUnder(path.join(directory, entry.name), relative));
+    else files.push(relative);
+  }
+  return files.sort();
+}
+
+function validateContent(collections, generatedPaths, publicFiles) {
   const errors = [];
   const slugs = new Map();
   const routes = new Map();
   const researchOrders = new Map();
   const generated = new Set(generatedPaths);
+  const publicRoutes = new Set(publicFiles);
 
   for (const [type, entries] of Object.entries(collections)) {
     for (const entry of entries) {
@@ -93,6 +85,7 @@ function validateContent(collections, generatedPaths) {
         else routes.set(route, entry.source);
 
         const existingPage = path.join(root, route);
+        if (publicRoutes.has(route)) errors.push(`${entry.source}: route /${type}/${entry.slug}/ conflicts with public/${route}`);
         if (!generated.has(route) && existsSync(existingPage)) errors.push(`${entry.source}: route /${type}/${entry.slug}/ conflicts with an existing authored page at ${route}`);
       }
 
@@ -127,7 +120,8 @@ const allContent = {
   blog: await collection('content/blog'),
   research: await collection('content/research'),
 };
-validateContent(allContent, previousOutputs);
+const publicFiles = await filesUnder(path.join(root, 'public'));
+validateContent(allContent, previousOutputs, publicFiles);
 
 for (const output of previousOutputs) {
   if (!/^(blog|research)\/[^/]+\/index\.html$/.test(output)) {
@@ -142,14 +136,14 @@ const posts = allContent.blog.filter(post => post.published).sort((a, b) =>
 );
 const postRows = posts.map(post => `<a class="article-row" href="/blog/${escape(post.slug)}/"><time datetime="${isoDate(post.date)}">${formatDate(post.date)}</time><h1>${escape(post.title)}</h1><span aria-hidden="true">↗</span></a>`).join('');
 await fs.mkdir(path.join(root, 'blog'), { recursive: true });
-await fs.writeFile(path.join(root, 'blog/index.html'), shell({ title: 'Blog', description: 'Notes and essays from Autonome Research.', active: 'blog', main: `<main class="page-main blog-index"><section class="article-list">${postRows || '<div class="empty-note">Writing forthcoming.</div>'}</section></main>` }));
+await fs.writeFile(path.join(root, 'blog/index.html'), shell({ title: 'Blog', description: 'Notes and essays from Autonome Research.', active: 'blog', pathname: '/blog/', main: `<main class="page-main blog-index"><section class="article-list">${postRows || '<div class="empty-note">Writing forthcoming.</div>'}</section></main>` }));
 
 for (const post of posts) {
   const target = path.join(root, 'blog', post.slug);
   await fs.mkdir(target, { recursive: true });
   const body = renderMarkdown(post.body, post.source);
   const main = `<main class="page-main post"><article><header class="post-header"><a href="/blog/">← Blog</a><h1>${escape(post.title)}</h1><time datetime="${isoDate(post.date)}">${compactDate(post.date)}</time><p class="post-subtitle">${escape(post.articleTitle || '')}</p></header><div class="post-body">${body}</div></article></main>`;
-  await fs.writeFile(path.join(target, 'index.html'), shell({ title: post.articleTitle || post.title, description: post.summary || post.title, active: 'blog', main }));
+  await fs.writeFile(path.join(target, 'index.html'), shell({ title: post.articleTitle || post.title, description: post.summary || post.title, active: 'blog', pathname: `/blog/${post.slug}/`, article: post, main }));
   generatedOutputs.push(`blog/${post.slug}/index.html`);
 }
 
@@ -158,16 +152,24 @@ const research = allContent.research.filter(item => item.published).sort((a, b) 
 );
 const cards = research.map(item => `<article><a class="research-card" href="/research/${escape(item.slug)}/"><span>${escape(item.field)}</span><h2>${escape(item.title)}</h2><p>${escape(item.summary)}</p><small>${escape(item.status || 'Read research')}</small></a></article>`).join('');
 await fs.mkdir(path.join(root, 'research'), { recursive: true });
-await fs.writeFile(path.join(root, 'research/index.html'), shell({ title: 'Research', description: 'Research from Autonome Research.', active: 'research', main: `<main class="page-main research-index"><section class="page-grid">${cards}</section></main>` }));
+await fs.writeFile(path.join(root, 'research/index.html'), shell({ title: 'Research', description: 'Research from Autonome Research.', active: 'research', pathname: '/research/', main: `<main class="page-main research-index"><section class="page-grid">${cards}</section></main>` }));
 
 for (const item of research) {
   const target = path.join(root, 'research', item.slug);
   await fs.mkdir(target, { recursive: true });
   const main = `<main class="page-main post research-detail"><article><header class="post-header"><a href="/research/">← Research</a><dl class="research-meta"><div><dt>Field</dt><dd>${escape(item.field)}</dd></div><div><dt>Status</dt><dd>${escape(item.status || 'Research forthcoming')}</dd></div></dl><h1>${escape(item.title)}</h1><p class="post-subtitle">${escape(item.summary)}</p></header><div class="post-body">${renderMarkdown(item.body, item.source)}</div></article></main>`;
-  await fs.writeFile(path.join(target, 'index.html'), shell({ title: item.title, description: item.summary, active: 'research', main }));
+  await fs.writeFile(path.join(target, 'index.html'), shell({ title: item.title, description: item.summary, active: 'research', pathname: `/research/${item.slug}/`, main }));
   generatedOutputs.push(`research/${item.slug}/index.html`);
 }
 
 generatedOutputs.sort();
 await fs.writeFile(manifestPath, `${JSON.stringify({ outputs: generatedOutputs }, null, 2)}\n`);
-console.log(`Generated ${posts.length} blog post(s) and ${research.length} research field(s).`);
+
+const xmlEscape = value => escape(value).replace(/'/g, '&apos;');
+const rssItems = posts.map(post => `<item><title>${xmlEscape(post.title)}</title><link>${siteOrigin}/blog/${post.slug}/</link><guid>${siteOrigin}/blog/${post.slug}/</guid><pubDate>${new Date(`${isoDate(post.date)}T00:00:00Z`).toUTCString()}</pubDate><description>${xmlEscape(post.summary)}</description></item>`).join('');
+await fs.writeFile(path.join(root, 'public/feed.xml'), `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Autonome Research</title><link>${siteOrigin}/blog/</link><description>Notes and essays from Autonome Research.</description>${rssItems}</channel></rss>\n`);
+const publicRoutes = ['/', '/about/', '/blog/', ...posts.map(post => `/blog/${post.slug}/`), '/research/', ...research.map(item => `/research/${item.slug}/`)];
+const sitemapUrls = publicRoutes.map(route => `<url><loc>${siteOrigin}${route}</loc></url>`).join('');
+await fs.writeFile(path.join(root, 'public/sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${sitemapUrls}</urlset>\n`);
+await fs.writeFile(path.join(root, 'public/robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${siteOrigin}/sitemap.xml\n`);
+console.log(`Generated ${posts.length} blog post(s), ${research.length} research field(s), RSS, and sitemap.`);

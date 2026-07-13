@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
 import { marked } from 'marked';
@@ -22,10 +23,65 @@ function shell({ title, description, active, main }) {
 async function collection(directory) {
   const files = (await fs.readdir(path.join(root, directory))).filter(file => file.endsWith('.md')).sort();
   return Promise.all(files.map(async file => {
-    const source = await fs.readFile(path.join(root, directory, file), 'utf8');
-    const parsed = matter(source);
-    return { ...parsed.data, body: parsed.content, source: `${directory}/${file}` };
+    const relative = `${directory}/${file}`;
+    const source = await fs.readFile(path.join(root, relative), 'utf8');
+    try {
+      const parsed = matter(source);
+      return { ...parsed.data, body: parsed.content, source: relative, frontmatter: parsed.matter };
+    } catch (error) {
+      throw new Error(`${relative}: cannot parse front matter: ${error.message}`);
+    }
   }));
+}
+
+const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const requiredStrings = {
+  blog: ['title', 'articleTitle', 'slug', 'summary'],
+  research: ['title', 'slug', 'field', 'summary'],
+};
+
+function validateContent(collections, generatedPaths) {
+  const errors = [];
+  const slugs = new Map();
+  const routes = new Map();
+  const researchOrders = new Map();
+  const generated = new Set(generatedPaths);
+
+  for (const [type, entries] of Object.entries(collections)) {
+    for (const entry of entries) {
+      for (const field of requiredStrings[type]) {
+        if (typeof entry[field] !== 'string' || entry[field].trim() === '') errors.push(`${entry.source}: required "${field}" must be a non-empty string`);
+      }
+      if (typeof entry.published !== 'boolean') errors.push(`${entry.source}: required "published" must be true or false`);
+      if (typeof entry.slug === 'string' && !slugPattern.test(entry.slug)) errors.push(`${entry.source}: "slug" must match ${slugPattern}`);
+
+      if (typeof entry.slug === 'string') {
+        const slugKey = `${type}/${entry.slug}`;
+        if (slugs.has(slugKey)) errors.push(`${entry.source}: duplicate slug "${entry.slug}" (also used by ${slugs.get(slugKey)})`);
+        else slugs.set(slugKey, entry.source);
+
+        const route = `${type}/${entry.slug}/index.html`;
+        if (routes.has(route)) errors.push(`${entry.source}: route /${type}/${entry.slug}/ conflicts with ${routes.get(route)}`);
+        else routes.set(route, entry.source);
+
+        const existingPage = path.join(root, route);
+        if (!generated.has(route) && existsSync(existingPage)) errors.push(`${entry.source}: route /${type}/${entry.slug}/ conflicts with an existing authored page at ${route}`);
+      }
+
+      if (type === 'blog') {
+        const dateLine = entry.frontmatter.match(/^date:\s*["']?([^"'\s]+)["']?\s*$/m);
+        const dateText = dateLine?.[1];
+        const match = dateText?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        const date = match && new Date(`${dateText}T00:00:00Z`);
+        if (!match || Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== dateText) errors.push(`${entry.source}: required "date" must be a real calendar date in YYYY-MM-DD format`);
+      } else {
+        if (!Number.isInteger(entry.order)) errors.push(`${entry.source}: required "order" must be an integer`);
+        else if (researchOrders.has(entry.order)) errors.push(`${entry.source}: duplicate research order ${entry.order} (also used by ${researchOrders.get(entry.order)})`);
+        else researchOrders.set(entry.order, entry.source);
+      }
+    }
+  }
+  if (errors.length) throw new Error(`Content validation failed:\n- ${errors.join('\n- ')}`);
 }
 
 // Only paths recorded by this generator are removable. This preserves authored static
@@ -37,6 +93,14 @@ try {
 } catch (error) {
   if (error.code !== 'ENOENT') throw new Error(`Cannot read ${path.relative(root, manifestPath)}: ${error.message}`);
 }
+
+// Validate every document, including drafts, before touching generated output.
+const allContent = {
+  blog: await collection('content/blog'),
+  research: await collection('content/research'),
+};
+validateContent(allContent, previousOutputs);
+
 for (const output of previousOutputs) {
   if (!/^(blog|research)\/[^/]+\/index\.html$/.test(output)) {
     throw new Error(`Refusing to remove invalid generated path from manifest: ${output}`);
@@ -45,7 +109,9 @@ for (const output of previousOutputs) {
 }
 
 const generatedOutputs = [];
-const posts = (await collection('content/blog')).filter(post => post.published).sort((a,b) => isoDate(b.date).localeCompare(isoDate(a.date)));
+const posts = allContent.blog.filter(post => post.published).sort((a, b) =>
+  isoDate(b.date).localeCompare(isoDate(a.date)) || a.slug.localeCompare(b.slug) || a.source.localeCompare(b.source)
+);
 const postRows = posts.map(post => `<a class="article-row" href="/blog/${escape(post.slug)}/"><time datetime="${isoDate(post.date)}">${formatDate(post.date)}</time><h1>${escape(post.title)}</h1><span aria-hidden="true">↗</span></a>`).join('');
 await fs.mkdir(path.join(root, 'blog'), { recursive: true });
 await fs.writeFile(path.join(root, 'blog/index.html'), shell({ title: 'Blog', description: 'Notes and essays from Autonome Research.', active: 'blog', main: `<main class="page-main blog-index"><section class="article-list">${postRows || '<div class="empty-note">Writing forthcoming.</div>'}</section></main>` }));
@@ -59,7 +125,9 @@ for (const post of posts) {
   generatedOutputs.push(`blog/${post.slug}/index.html`);
 }
 
-const research = (await collection('content/research')).filter(item => item.published).sort((a,b) => Number(a.order) - Number(b.order));
+const research = allContent.research.filter(item => item.published).sort((a, b) =>
+  a.order - b.order || a.slug.localeCompare(b.slug) || a.source.localeCompare(b.source)
+);
 const cards = research.map(item => `<article><a class="research-card" href="/research/${escape(item.slug)}/"><span>${escape(item.field)}</span><h2>${escape(item.title)}</h2><p>${escape(item.summary)}</p><small>${escape(item.status || 'Read research')}</small></a></article>`).join('');
 await fs.mkdir(path.join(root, 'research'), { recursive: true });
 await fs.writeFile(path.join(root, 'research/index.html'), shell({ title: 'Research', description: 'Research from Autonome Research.', active: 'research', main: `<main class="page-main research-index"><section class="page-grid">${cards}</section></main>` }));

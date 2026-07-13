@@ -60,14 +60,14 @@ for (const post of posts) {
 }
 
 const research = (await collection('content/research')).filter(item => item.published).sort((a,b) => Number(a.order) - Number(b.order));
-const cards = research.map(item => `<article><a href="/research/${escape(item.slug)}/"><span>${escape(item.field)}</span><h2>${escape(item.title)}</h2><p>${escape(item.summary)}</p><small>${escape(item.status || 'Read research')}</small></a></article>`).join('');
+const cards = research.map(item => `<article><a class="research-card" href="/research/${escape(item.slug)}/"><span>${escape(item.field)}</span><h2>${escape(item.title)}</h2><p>${escape(item.summary)}</p><small>${escape(item.status || 'Read research')}</small></a></article>`).join('');
 await fs.mkdir(path.join(root, 'research'), { recursive: true });
 await fs.writeFile(path.join(root, 'research/index.html'), shell({ title: 'Research', description: 'Research from Autonome Research.', active: 'research', main: `<main class="page-main research-index"><section class="page-grid">${cards}</section></main>` }));
 
 for (const item of research) {
   const target = path.join(root, 'research', item.slug);
   await fs.mkdir(target, { recursive: true });
-  const main = `<main class="page-main post"><article><header class="post-header"><a href="/research/">← Research</a><span>${escape(item.field)}</span><h1>${escape(item.title)}</h1><p class="post-subtitle">${escape(item.summary)}</p></header><div class="post-body">${marked.parse(item.body)}</div></article></main>`;
+  const main = `<main class="page-main post research-detail"><article><header class="post-header"><a href="/research/">← Research</a><dl class="research-meta"><div><dt>Field</dt><dd>${escape(item.field)}</dd></div><div><dt>Status</dt><dd>${escape(item.status || 'Research forthcoming')}</dd></div></dl><h1>${escape(item.title)}</h1><p class="post-subtitle">${escape(item.summary)}</p></header><div class="post-body">${marked.parse(item.body)}</div></article></main>`;
   await fs.writeFile(path.join(target, 'index.html'), shell({ title: item.title, description: item.summary, active: 'research', main }));
   generatedOutputs.push(`research/${item.slug}/index.html`);
 }
